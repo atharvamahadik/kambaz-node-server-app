@@ -1,33 +1,30 @@
-import { v4 as uuidv4 } from "uuid"; 
-import * as dbModule from "../Database/index.js"; 
+import { v4 as uuidv4 } from "uuid";
+import * as dbModule from "../Database/index.js";
+import model from "./model.js";
 
-export default function CoursesDao(db) { 
-    let courses = [...dbModule.courses]; 
-    let enrollments = [...dbModule.enrollments]; 
-    function findAllCourses() { 
-        return courses; 
-    } 
-    function findCoursesForEnrolledUser(userId) { 
-        return courses.filter((course) => 
-            enrollments.some((enrollment) => enrollment.user === userId && enrollment.course === course._id)); 
-    } 
-    function createCourse(course) { 
-        const newCourse = { ...course, _id: uuidv4() }; 
-        courses.push(newCourse); 
-        return newCourse; 
-    } 
-    function deleteCourse(courseId) { 
-        courses = courses.filter((course) => course._id !== courseId); 
-        enrollments = enrollments.filter((enrollment) => enrollment.course !== courseId);
-    } 
+export default function CoursesDao() {
+    let courses = [...dbModule.courses];
+    let enrollments = [...dbModule.enrollments];
+    function findAllCourses() {
+        return model.find({}, { name: 1, description: 1});
+    }
+    async function findCoursesForEnrolledUser(userId) {
+        const courses = await model.find({}, { name: 1, description: 1});
+        return courses.filter((course) =>
+            enrollments.some((enrollment) => enrollment.user === userId && enrollment.course === course._id));
+    }
+    function createCourse(course) {
+        const newCourse = { ...course, _id: uuidv4() };
+        return model.create(newCourse);
+    }
+    function deleteCourse(courseId) {
+        return model.deleteOne({ _id: courseId });
+    }
     function updateCourse(courseId, courseUpdates) {
-         const { courses } = db; 
-         const course = courses.find((course) => course._id === courseId); 
-         Object.assign(course, courseUpdates); 
-         return course; 
-    } 
+        return model.updateOne({ _id: courseId }, { $set: courseUpdates });
+    }
 
 
- return { findAllCourses, findCoursesForEnrolledUser, createCourse, deleteCourse, updateCourse }; 
+    return { findAllCourses, findCoursesForEnrolledUser, createCourse, deleteCourse, updateCourse };
 
 }
